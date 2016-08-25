@@ -1,5 +1,5 @@
 metadata {
-	definition (name: "Mbed Rooflight Simulator 2", namespace: "CR76", author: "Cameron Reid") {
+	definition (name: "Mbed Rooflight Simulator 3", namespace: "CR76", author: "Cameron Reid") {
         capability "Refresh"
         capability "Polling"
         capability "Sensor"
@@ -7,7 +7,9 @@ metadata {
         capability "Temperature Measurement"
         capability "Switch level"
         
-    	//fingerprint endpointId: "23", profileId: "0104",inClusters: "0000,0006,0008,0402"
+        attribute "status", "string"
+        
+    	fingerprint endpointId: "77 , 88", profileId: "0104",inClusters: "0000,0006,0008,0402"
 	}
 
 	// simulator metadata
@@ -33,6 +35,10 @@ metadata {
         standardTile("refresh", "device.refresh", inactiveLabel: false, decoration: "flat", width:2, height:2 ) {
 			state "default", action:"refresh.refresh", icon:"st.secondary.refresh"
 		}
+        standardTile("Rain", "device.status", width: 2, height: 2) {
+    		state "Dry", label: 'Dry', icon:"st.Weather.weather14", backgroundColor: "#ffffff"
+    		state "Wet", label: 'Raining', icon:"st.Weather.weather10", backgroundColor: "#153591"
+		}
         
         valueTile("temperature", "device.temperature", width:2, height:2) {
 			state("temperature", label:'${currentValue}°',
@@ -48,7 +54,7 @@ metadata {
 			)
         }
 		main (["sliderTile"])
-		details (["sliderTile", "refresh", "temperature"])
+		details (["sliderTile", "refresh", "temperature", "Rain"])
 	}
 }
 
@@ -67,6 +73,19 @@ def parse(String description) {
         else if (description?.endsWith("01 01 0000001001")){
         	name = "switch"
             value = "on"}
+    def result = createEvent(name: name, value: value)
+    log.debug "Parse returned ${result?.descriptionText}"
+    return result
+    }
+    if (description?.startsWith("catchall: 0104 0006 88")) {
+        log.debug "On/Off command received from EP 1"
+        if (description?.endsWith("01 01 0000001000")){
+        	name = "status"
+            value = "Dry"}
+        else if (description?.endsWith("01 01 0000001001")){
+        	name = "status"
+            value = "Wet"}
+    }
     def result = createEvent(name: name, value: value)
     log.debug "Parse returned ${result?.descriptionText}"
     return result
